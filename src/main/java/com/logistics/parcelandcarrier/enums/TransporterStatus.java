@@ -1,6 +1,6 @@
 package com.logistics.parcelandcarrier.enums;
 
-public enum StatutTransporteur {
+public enum TransporterStatus {
 
     AVAILABLE,
     ON_DELIVERY;
