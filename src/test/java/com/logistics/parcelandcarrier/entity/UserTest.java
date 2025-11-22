@@ -156,4 +156,4 @@ class UserTest {
         // Admin cannot take packages
         assertFalse(admin.canTakeNewPackage());
     }
-}
+}   
