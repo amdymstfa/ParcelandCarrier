@@ -1,0 +1,64 @@
+.git
+.gitignore
+.gitattributes
+.github
+
+# IDE
+.idea
+.vscode
+.eclipse
+.settings
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+
+# Build artifacts
+target/
+bin/
+build/
+out/
+*.class
+*.jar
+*.war
+
+# Logs
+logs/
+*.log
+
+# Documentation
+docs/
+*.md
+README.md
+
+# Tests
+src/test/
+
+# Docker files
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# CI/CD
+Jenkinsfile
+.github/
+.gitlab-ci.yml
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.bak
+*.old
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+.mvn/wrapper/maven-wrapper.jar
+
+src/main/resources/application-prod.yml
+src/main/resources/application-dev.yml
