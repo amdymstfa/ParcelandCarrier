@@ -1,0 +1,23 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: gestion_colis_test
+
+  mongodb:
+    embedded:
+      version: 4.0.2
+
+jwt:
+  secret: test-secret-key-for-unit-tests-only
+  expiration: 3600000
+
+logging:
+  level:
+    root: ERROR
+    com.logistics.parcelandcarrier: DEBUG
