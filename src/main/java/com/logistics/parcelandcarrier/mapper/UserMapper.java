@@ -6,6 +6,8 @@ import com.logistics.parcelandcarrier.entity.User;
 import org.mapstruct.*;
 import org.springframework.data.domain.Page;
 
+import java.util.List;
+
 /**
  * MapStruct mapper for User entity and DTOs
  */
@@ -71,4 +73,6 @@ public interface UserMapper {
   default Page<UserResponse> toResponsePage(Page<User> page) {
     return page.map(this::toResponse);
   }
+
+  List<UserResponse> toResponseList(List<User> users);
 }
