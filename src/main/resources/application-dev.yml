@@ -1,0 +1,35 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: gestion_colis_dev
+
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
+
+server:
+  port: 8080
+
+jwt:
+  secret: dev-secret-key-change-me-in-production-123456789
+  expiration: 86400000
+
+logging:
+  level:
+    root: INFO
+    com.logistics.parcelandcarrier: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.data.mongodb: DEBUG
+    org.springframework.web: DEBUG
+  file:
+    name: logs/app-dev.log
+
+spring.mongodb.embedded.version: 4.0.2
