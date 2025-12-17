@@ -1,6 +1,6 @@
 spring:
   application:
-    name: parcelandcarrier
+    name: parcel-carrier-mongodb
 
   profiles:
     active: dev
