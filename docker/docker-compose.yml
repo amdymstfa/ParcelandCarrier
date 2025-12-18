@@ -1,9 +1,6 @@
 version: '3.8'
 
 services:
-  # =============================================================================
-  # MongoDB - Base de données
-  # =============================================================================
   mongodb:
     image: mongo:7.0
     container_name: parcel-carrier-mongodb
@@ -11,12 +8,12 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin123
-      MONGO_INITDB_DATABASE: gestion_colis
+      MONGO_INITDB_DATABASE: parcel-carrier-mongodb
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-      - ./docker/mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
       - parcel-network
     healthcheck:
@@ -25,67 +22,25 @@ services:
       timeout: 5s
       retries: 5
 
-  # =============================================================================
-  # Application Spring Boot
-  # =============================================================================
   app:
     build:
-      context: .
-      dockerfile: ./docker/Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: parcel-carrier-app
     restart: unless-stopped
     depends_on:
       mongodb:
         condition: service_healthy
     environment:
-      SPRING_PROFILES_ACTIVE: prod
-      MONGODB_HOST: mongodb
-      MONGODB_PORT: 27017
-      MONGODB_DATABASE: gestion_colis
-      MONGODB_USERNAME: admin
-      MONGODB_PASSWORD: admin123
-      JWT_SECRET: "SuperSecretKeyForJWT123456789ChangeInProduction"
-      JWT_EXPIRATION: 86400000
-      SERVER_PORT: 8080
+      - SPRING_PROFILES_ACTIVE=prod
+      # On utilise l'URI pour passer l'authentification et le authSource=admin
+      - SPRING_DATA_MONGODB_URI=mongodb://admin:admin123@mongodb:27017/parcel-carrier-mongodb?authSource=admin
+      - JWT_SECRET=VotreCleSecrete123456789VotreCleSecreteSuper789AMinChanger
     ports:
       - "8080:8080"
     networks:
       - parcel-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
 
-  # =============================================================================
-  # n8n - Workflow Automation (BONUS)
-  # =============================================================================
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: parcel-carrier-n8n
-    restart: unless-stopped
-    depends_on:
-      - app
-    environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=admin123
-      - N8N_HOST=0.0.0.0
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      - WEBHOOK_URL=http://n8n:5678/
-    ports:
-      - "5678:5678"
-    volumes:
-      - n8n_data:/home/node/.n8n
-      - ./docs/n8n:/home/node/workflows:ro
-    networks:
-      - parcel-network
-
-  # =============================================================================
-  # Mongo Express - Interface Web MongoDB (Développement uniquement)
-  # =============================================================================
   mongo-express:
     image: mongo-express:latest
     container_name: parcel-carrier-mongo-express
@@ -96,28 +51,15 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: admin
       ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
       ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongodb:27017/
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: admin123
     ports:
       - "8081:8081"
     networks:
       - parcel-network
-    profiles:
-      - dev
 
-# =============================================================================
-# Volumes persistants
-# =============================================================================
 volumes:
   mongodb_data:
-    driver: local
   n8n_data:
-    driver: local
 
-# =============================================================================
-# Réseau Docker
-# =============================================================================
 networks:
   parcel-network:
     driver: bridge
-    name: parcel-carrier-network
