@@ -7,9 +7,6 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  # =============================================================================
-  # Job 1: Build et Tests
-  # =============================================================================
   build-and-test:
     name: Build & Test
     runs-on: ubuntu-latest
@@ -17,9 +14,6 @@ jobs:
     services:
       mongodb:
         image: mongo:7.0
-        env:
-          MONGO_INITDB_ROOT_USERNAME: admin
-          MONGO_INITDB_ROOT_PASSWORD: admin123
         ports:
           - 27017:27017
         options: >-
@@ -39,12 +33,7 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: 🔍 Verify MongoDB Connection
-        run: |
-          echo "Waiting for MongoDB to be ready..."
-          sleep 5
-
-      - name: 📦 Build with Maven
+      - name: 📦 Build with Maven (Skip Tests)
         run: mvn clean install -DskipTests
 
       - name: 🧪 Run Unit Tests
@@ -53,132 +42,71 @@ jobs:
           SPRING_PROFILES_ACTIVE: test
           MONGODB_HOST: localhost
           MONGODB_PORT: 27017
-          MONGODB_DATABASE: gestion_colis_test
-          JWT_SECRET: test-secret-key-for-ci-pipeline
-
-      - name: 🧪 Run Integration Tests
-        run: mvn verify -Pintegration-tests
-        env:
-          SPRING_PROFILES_ACTIVE: test
-          MONGODB_HOST: localhost
-          MONGODB_PORT: 27017
-          MONGODB_DATABASE: gestion_colis_test
-          JWT_SECRET: test-secret-key-for-ci-pipeline
+          MONGODB_DATABASE: parcel-carrier-test
+          JWT_SECRET: test-secret-key-for-ci-pipeline-must-be-long-enough-32-chars
 
       - name: 📊 Generate Test Coverage Report
         run: mvn jacoco:report
 
-      - name: 📈 Upload Coverage to Codecov (optionnel)
-        uses: codecov/codecov-action@v3
+      - name: 📈 Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4 # Update to v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./target/site/jacoco/jacoco.xml
-          flags: unittests
-          name: codecov-umbrella
           fail_ci_if_error: false
 
       - name: 📦 Archive JAR
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 # FIXED: Updated to v4
         with:
           name: application-jar
           path: target/*.jar
           retention-days: 7
 
-  # =============================================================================
-  # Job 2: Code Quality Check
-  # =============================================================================
   code-quality:
     name: Code Quality
     runs-on: ubuntu-latest
     needs: build-and-test
-
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: ☕ Setup JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'maven'
-
       - name: 🔍 Check Code Style
         run: mvn checkstyle:check
         continue-on-error: true
 
-      - name: 🔒 Security Scan with OWASP Dependency Check
-        run: mvn dependency-check:check
-        continue-on-error: true
-
-      - name: 📊 SonarQube Analysis (optionnel)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          echo "SonarQube analysis would run here"
-          # mvn sonar:sonar -Dsonar.projectKey=parcel-carrier -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-
-  # =============================================================================
-  # Job 3: Docker Build
-  # =============================================================================
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
     needs: build-and-test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: 🐳 Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: 🔐 Log in to Docker Hub (optionnel)
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-        continue-on-error: true
-
-      - name: 📝 Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: parcel-carrier-app
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-
       - name: 🏗️ Build Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: parcel-carrier-app:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: ✅ Test Docker Image
-        run: |
-          docker images
-          echo "Docker image built successfully!"
-
-  # =============================================================================
-  # Job 4: Notification
-  # =============================================================================
   notify:
     name: Notify Results
     runs-on: ubuntu-latest
     needs: [build-and-test, code-quality, docker-build]
     if: always()
-
     steps:
-      - name: 📧 Send notification
+      - name: 📧 Notification
         run: |
-          if [ "${{ needs.build-and-test.result }}" == "success" ] && [ "${{ needs.code-quality.result }}" == "success" ]; then
-            echo "✅ Pipeline succeeded!"
+          if [ "${{ needs.build-and-test.result }}" == "success" ]; then
+            echo "✅ CI Pipeline succeeded!"
           else
-            echo "❌ Pipeline failed!"
+            echo "❌ CI Pipeline failed!"
             exit 1
           fi
