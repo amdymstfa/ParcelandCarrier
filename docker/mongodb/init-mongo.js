@@ -1,17 +1,12 @@
-// =============================================================================
-// MongoDB Initialization Script (English Version - Compatible with Java Entities)
-// =============================================================================
-
 db = db.getSiblingDB('parcel-carrier-mongodb');
 
-print('🚀 Initializing the parcel-carrier-mongodb database...');
+print('🚀 Starting database initialization...');
 
-// Drop collections if they exist to start fresh (Optional)
 db.users.drop();
 db.packages.drop();
 
 // =============================================================================
-// 1. Create collections with validation (ENGLISH)
+// 1. Collections with Validations
 // =============================================================================
 
 db.createCollection('users', {
@@ -23,91 +18,74 @@ db.createCollection('users', {
         login: { bsonType: 'string' },
         password: { bsonType: 'string' },
         role: {
-          enum: ['ADMIN', 'TRANSPORTER'], // Match Role.java
+          enum: ['ADMIN', 'TRANSPORTER'],
           description: 'Must be ADMIN or TRANSPORTER'
         },
         active: { bsonType: 'bool' },
         specialty: {
-          enum: ['STANDARD', 'FRAGILE', 'REFRIGERATED'], // Match Specialty.java
-          description: 'Optional for ADMIN'
+          enum: ['STANDARD', 'FRAGILE', 'REFRIGERATED'],
+          description: 'Required for TRANSPORTER'
         },
         status: {
-          enum: ['AVAILABLE', 'ON_DELIVERY'], // Match TransporterStatus.java
-          description: 'Optional for ADMIN'
+          enum: ['AVAILABLE', 'ON_DELIVERY'],
+          description: 'Required for TRANSPORTER'
         }
       }
     }
   }
 });
 
-db.createCollection('packages', { // Renamed from 'colis' to 'packages'
+db.createCollection('packages', {
   validator: {
     $jsonSchema: {
       bsonType: 'object',
       required: ['type', 'weight', 'destinationAddress', 'status'],
       properties: {
         type: { enum: ['STANDARD', 'FRAGILE', 'REFRIGERATED'] },
-        weight: { bsonType: 'double', minimum: 0 },
+        weight: { bsonType: 'number' },
         destinationAddress: { bsonType: 'string' },
         status: { enum: ['PENDING', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'] },
         transporterId: { bsonType: 'string' },
         handlingInstructions: { bsonType: 'string' },
-        minTemperature: { bsonType: 'double' },
-        maxTemperature: { bsonType: 'double' }
+        minTemperature: { bsonType: 'number' },
+        maxTemperature: { bsonType: 'number' }
       }
     }
   }
 });
 
-print('✅ Collections created with English validation schemas');
+print('✅ Collections and validators created.');
+print('ℹ️  Note: Indexes will be created automatically by the Java application.');
 
 // =============================================================================
-// 2. Create indexes
+// 2. Data Insertion
 // =============================================================================
+db = db.getSiblingDB('parcel-carrier-mongodb');
+print('🚀 Initializing database with Spring Data compatibility...');
 
-db.users.createIndex({ login: 1 }, { unique: true, name: 'idx_user_login' });
-db.users.createIndex({ role: 1 }, { name: 'idx_user_role' });
-db.users.createIndex({ specialty: 1 }, { name: 'idx_user_specialty' });
+db.users.drop();
+db.packages.drop();
 
-db.packages.createIndex({ type: 1 }, { name: 'idx_package_type' });
-db.packages.createIndex({ status: 1 }, { name: 'idx_package_status' });
-db.packages.createIndex({ transporterId: 1 }, { name: 'idx_package_transporter' });
-
-print('✅ English indexes created');
-
-// =============================================================================
-// 3. Insert initial data (ENGLISH)
-// =============================================================================
-
-// BCrypt hash for "admin123" and "trans123"
-const adminPassword = '$2a$10$xZnPq5qJZ7Z9QxZ9QxZ9QeO5K5K5K5K5K5K5K5K5K5K5K5K5K5K5K5K';
-const transporterPassword = '$2a$10$yZnPq5qJZ7Z9QxZ9QxZ9QeO6K6K6K6K6K6K6K6K6K6K6K6K6K6K6K';
+const adminHash = '$2a$12$clZ8MOnT02Uo5.U/3sEInOInS8U4.f/xUvR6x.eH5Yq6V8m8W.Xl6';
+const transHash = '$2a$12$8.UAsR/3sEInoOImN.KjS6G4.f/xUvR6x.eH5Yq6V8m8W.8vVfMCHn';
 
 db.users.insertMany([
   {
+    _class: "com.logistics.parcelandcarrier.entity.User",
     login: 'admin',
-    password: adminPassword,
+    password: adminHash,
     role: 'ADMIN',
     active: true,
     createdAt: new Date(),
     updatedAt: new Date()
   },
   {
+    _class: "com.logistics.parcelandcarrier.entity.User",
     login: 'transporter1',
-    password: transporterPassword,
+    password: transHash,
     role: 'TRANSPORTER',
     active: true,
     specialty: 'STANDARD',
-    status: 'AVAILABLE',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    login: 'transporter2',
-    password: transporterPassword,
-    role: 'TRANSPORTER',
-    active: true,
-    specialty: 'REFRIGERATED', // Changed from FRIGO
     status: 'AVAILABLE',
     createdAt: new Date(),
     updatedAt: new Date()
@@ -116,23 +94,14 @@ db.users.insertMany([
 
 db.packages.insertMany([
   {
+    _class: "com.logistics.parcelandcarrier.entity.Package",
     type: 'STANDARD',
     weight: 5.5,
     destinationAddress: '123 Paris Street, France',
     status: 'PENDING',
     createdAt: new Date(),
     updatedAt: new Date()
-  },
-  {
-    type: 'REFRIGERATED',
-    weight: 10.0,
-    destinationAddress: '789 Berlin Road, Germany',
-    status: 'PENDING',
-    minTemperature: 2.0,
-    maxTemperature: 8.0,
-    createdAt: new Date(),
-    updatedAt: new Date()
   }
 ]);
 
-print('Initial data inserted');
+print('✅ Initial data inserted with Spring Data class mapping.');
