@@ -1,3 +1,10 @@
+# On place la version ici aussi pour éviter l'erreur au démarrage en dev
+de:
+  flapdoodle:
+    mongodb:
+      embedded:
+        version: 7.0.2
+
 spring:
   application:
     name: parcel-carrier-mongodb
@@ -26,36 +33,28 @@ server:
     include-stacktrace: on_param
     include-exception: false
 
-# Configuration JWT
 jwt:
   secret: ${JWT_SECRET:VotreCleSecrete123456789VotreCleSecreteSuper789AMinChanger}
   expiration: ${JWT_EXPIRATION:86400000}
   issuer: parcel-and-carrier-api
 
-# Logging
 logging:
   level:
     root: INFO
     com.logistics.parcelandcarrier: DEBUG
     org.springframework.security: DEBUG
     org.springframework.data.mongodb: DEBUG
+    de.flapdoodle.embed.mongo: ERROR
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
-# Swagger/OpenAPI
 springdoc:
   api-docs:
     path: /api-docs
-    enabled: true
   swagger-ui:
     path: /swagger-ui.html
-    enabled: true
-    operations-sorter: method
-    tags-sorter: alpha
-  show-actuator: false
 
-# Actuator
 management:
   endpoints:
     web:
