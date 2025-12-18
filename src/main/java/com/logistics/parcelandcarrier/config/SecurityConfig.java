@@ -26,9 +26,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Spring Security Configuration
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -41,46 +38,34 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
-      // Disable CSRF (stateless API with JWT)
       .csrf(AbstractHttpConfigurer::disable)
-
-      // Configure CORS
       .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-      // Configure session management (stateless)
       .sessionManagement(session ->
         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
       )
-
-      // Configure authorization
       .authorizeHttpRequests(auth -> auth
-        // Public endpoints
-        .requestMatchers("/api/auth/**").permitAll()
-        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-        .requestMatchers("/actuator/health").permitAll()
-
-        // Admin endpoints
+        .requestMatchers(
+          "/api/auth/**",
+          "/v3/api-docs",
+          "/v3/api-docs/**",
+          "/api-docs",
+          "/api-docs/**",
+          "/swagger-ui/**",
+          "/swagger-ui.html",
+          "/webjars/**",
+          "/actuator/health",
+          "/error"
+        ).permitAll()
         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-        // Transporter endpoints
         .requestMatchers("/api/transporter/**").hasRole("TRANSPORTER")
-
-        // All other requests must be authenticated
         .anyRequest().authenticated()
       )
-
-      // Add JWT filter before UsernamePasswordAuthenticationFilter
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-
-      // Configure authentication provider
       .authenticationProvider(authenticationProvider());
 
     return http.build();
   }
 
-  /**
-   * Authentication provider configuration
-   */
   @Bean
   public AuthenticationProvider authenticationProvider() {
     DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -89,38 +74,24 @@ public class SecurityConfig {
     return authProvider;
   }
 
-  /**
-   * Password encoder bean (BCrypt)
-   */
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder(12);
   }
 
-  /**
-   * Authentication manager bean
-   */
   @Bean
-  public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
-    throws Exception {
+  public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
     return config.getAuthenticationManager();
   }
 
-  /**
-   * CORS configuration
-   */
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-
-    // Allowed origins (configure according to your frontend)
     configuration.setAllowedOrigins(Arrays.asList(
       "http://localhost:3000",
       "http://localhost:4200",
       "http://localhost:8080"
     ));
-
-    // Allowed methods
     configuration.setAllowedMethods(Arrays.asList(
       HttpMethod.GET.name(),
       HttpMethod.POST.name(),
@@ -129,19 +100,12 @@ public class SecurityConfig {
       HttpMethod.DELETE.name(),
       HttpMethod.OPTIONS.name()
     ));
-
-    // Allowed headers
     configuration.setAllowedHeaders(List.of("*"));
-
-    // Allow credentials
     configuration.setAllowCredentials(true);
-
-    // Max age
     configuration.setMaxAge(3600L);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
-
     return source;
   }
 }
