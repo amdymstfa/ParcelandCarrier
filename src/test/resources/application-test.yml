@@ -1,24 +1,22 @@
-
-de:
-  flapdoodle:
-    mongodb:
-      embedded:
-        version: 7.0.2
-
 spring:
+  # 1. Désactiver Flapdoodle
+  autoconfigure:
+    exclude: de.flapdoodle.embed.mongo.spring.autoconfigure.EmbeddedMongoAutoConfiguration
+
   data:
     mongodb:
-      host: localhost
-      port: 27017
-      database: gestion_colis_test
+      # 2. Utilisation de l'URI pour gérer l'authentification sur le Mongo local
+      # On utilise admin/admin123 car c'est ce que vous avez configuré sur votre machine
+      uri: mongodb://${MONGODB_USERNAME:admin}:${MONGODB_PASSWORD:admin123}@${MONGODB_HOST:localhost}:${MONGODB_PORT:27017}/${MONGODB_DATABASE:parcel-carrier-test}?authSource=admin
+
+      # 3. Désactiver la création d'index automatique pour les tests (évite l'erreur 13 au démarrage)
+      auto-index-creation: false
 
 jwt:
-
-  secret: test-secret-key-for-unit-tests-only-must-be-long-enough
+  secret: ${JWT_SECRET:test-secret-key-for-unit-tests-only-must-be-long-enough-32-chars}
   expiration: 3600000
 
 logging:
   level:
     root: ERROR
     com.logistics.parcelandcarrier: DEBUG
-    de.flapdoodle.embed.mongo: WARN
